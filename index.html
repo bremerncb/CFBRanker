@@ -1,0 +1,382 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CFB Rankings</title>
+  <style>
+    :root {
+      --navy: #101d35; --navy2: #182b4b; --gold: #d6a84f;
+      --paper: #f4f6fa; --ink: #172033; --muted: #6b7485;
+      --line: #e2e7ef; --white: #fff; --green: #16835d; --red: #bd3d48;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--paper); color: var(--ink);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    header { background: linear-gradient(120deg, var(--navy), var(--navy2));
+      color: white; padding: 28px max(22px, calc((100vw - 1180px)/2)); border-bottom: 4px solid var(--gold); }
+    .brand { display:flex; align-items:center; gap:13px; }
+    .mark { width:42px; height:42px; display:grid; place-items:center; border:2px solid var(--gold);
+      color:var(--gold); border-radius:10px; font-weight:900; letter-spacing:-1px; }
+    h1 { margin:0; font-size: clamp(23px, 4vw, 32px); letter-spacing:-.7px; }
+    header p { color:#c8d2e2; margin:7px 0 0; font-size:14px; }
+    main { max-width:1180px; margin:30px auto; padding:0 22px 60px; }
+    .toolbar { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:14px; margin-bottom:18px; }
+    .toolbar h2 { margin:0; font-size:22px; }
+    .actions { display:flex; gap:10px; flex-wrap:wrap; }
+    input { min-width:180px; padding:11px 13px; border:1px solid var(--line); border-radius:9px; font:inherit; background:white; }
+    button { border:0; border-radius:9px; padding:11px 15px; font:600 14px inherit; cursor:pointer; }
+    .primary { background:var(--gold); color:#1c2638; }
+    .secondary { background:white; color:var(--navy); border:1px solid var(--line); }
+    button:hover, .team-row:hover { filter:brightness(.97); }
+    button:disabled { opacity:.6; cursor:wait; }
+    .settings { display:flex; flex-wrap:wrap; align-items:end; gap:12px; margin:18px 0 22px;
+      padding:16px; background:white; border:1px solid var(--line); border-radius:12px; }
+    .setting { display:flex; flex-direction:column; gap:6px; flex:1 1 145px; }
+    .setting label { font-size:12px; color:var(--muted); font-weight:700; }
+    .setting input { width:100%; min-width:0; }
+    .settings button { min-height:42px; }
+    .stats { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin:18px 0 22px; }
+    .stat { background:white; border:1px solid var(--line); border-radius:12px; padding:16px 18px; }
+    .stat span { display:block; color:var(--muted); font-size:12px; text-transform:uppercase; letter-spacing:.08em; }
+    .stat strong { display:block; margin-top:6px; font-size:24px; }
+    .panel { background:white; border:1px solid var(--line); border-radius:14px; overflow:hidden; box-shadow:0 4px 18px #15254408; }
+    .table-head, .team-row { display:grid; grid-template-columns:70px minmax(180px,1fr) 150px 140px; gap:12px; align-items:center; padding:13px 20px; }
+    .table-head { background:#f8f9fc; color:var(--muted); font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; }
+    .team-row { width:100%; text-align:left; background:white; border-radius:0; border-top:1px solid var(--line); color:var(--ink); }
+    .rank { font-weight:800; color:var(--muted); }
+    .team-name { font-weight:700; }
+    .rating { font-variant-numeric:tabular-nums; font-weight:700; }
+    .view { color:#52627a; font-size:13px; }
+    .team-row:focus-visible, button:focus-visible, input:focus-visible { outline:3px solid #d6a84f88; outline-offset:2px; }
+    .hidden { display:none !important; }
+    .detail-top { display:flex; align-items:center; gap:14px; margin:8px 0 20px; }
+    .detail-top h2 { margin:0; font-size:27px; }
+    .subtle { color:var(--muted); font-size:14px; margin-top:5px; }
+    .detail-stats { display:flex; gap:10px; flex-wrap:wrap; margin:18px 0; }
+    .pill { background:white; border:1px solid var(--line); border-radius:999px; padding:9px 13px; font-size:13px; }
+    .schedule { display:grid; gap:10px; }
+    .game { background:white; border:1px solid var(--line); border-radius:12px; padding:15px 17px;
+      display:grid; grid-template-columns:90px minmax(150px,1fr) 110px 120px; align-items:center; gap:12px; }
+    .week { color:var(--muted); font-size:12px; font-weight:700; text-transform:uppercase; }
+    .opponent { font-weight:700; }
+    .location { color:var(--muted); font-size:13px; }
+    .result { font-weight:800; text-align:right; font-variant-numeric:tabular-nums; }
+    .impact { margin-top:5px; font-size:12px; font-weight:800; }
+    .impact.positive { color:var(--green); }
+    .impact.negative { color:var(--red); }
+    .impact.zero { color:var(--muted); }
+    .win { color:var(--green); } .loss { color:var(--red); } .pending { color:var(--muted); }
+    .message { padding:22px; color:var(--muted); text-align:center; }
+    footer { color:var(--muted); font-size:12px; text-align:center; margin-top:22px; }
+    @media(max-width:700px) {
+      .stats { grid-template-columns:1fr; }
+      .table-head, .team-row { grid-template-columns:42px minmax(120px,1fr) 90px; padding:12px; gap:7px; }
+      .table-head span:last-child, .team-row .view { display:none; }
+      .game { grid-template-columns:65px minmax(100px,1fr) 75px; gap:8px; padding:13px 11px; }
+      .game .location { display:none; }
+      .result { font-size:13px; }
+      .actions { width:100%; }
+      .actions input { width:100%; }
+      .settings button { width:100%; }
+    }
+  </style>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <div class="mark">CFB</div>
+    <div><h1>College Football Rankings</h1><p>2026 FBS rankings · Team ratings and schedules</p></div>
+  </div>
+</header>
+<main>
+  <section id="rankingsPage">
+    <div class="toolbar">
+      <div>
+        <h2>National Rankings</h2>
+        <div class="subtle">Select any team to view its schedule and game results.</div>
+      </div>
+      <div class="actions">
+        <input id="search" type="search" placeholder="Search teams..." aria-label="Search teams">
+      </div>
+    </div>
+
+    <div class="settings">
+      <div class="setting">
+        <label for="iterationsInput">Iterations</label>
+        <input id="iterationsInput" type="number" min="1" step="1" value="15">
+      </div>
+      <div class="setting">
+        <label for="locationFactorInput">Location Factor (0–1)</label>
+        <input id="locationFactorInput" type="number" min="0" max="1" step="0.01" value="0">
+      </div>
+      <div class="setting">
+        <label for="marginFactorInput">Margin Factor</label>
+        <input id="marginFactorInput" type="number" min="0" step="0.01" value="0">
+      </div>
+      <div class="setting">
+        <label for="recencyFactorInput">Recency Factor</label>
+        <input id="recencyFactorInput" type="number" min="0" step="0.01" value="0">
+      </div>
+      <button id="recalculate" class="primary">Recalculate Rankings</button>
+    </div>
+
+    <div class="stats">
+      <div class="stat"><span>Teams ranked</span><strong id="teamCount">—</strong></div>
+      <div class="stat"><span>Iterations</span><strong id="iterations">15</strong></div>
+      <div class="stat"><span>Top-ranked team</span><strong id="leader" style="font-size:19px">—</strong></div>
+    </div>
+
+    <div class="panel">
+      <div class="table-head"><span>Rank</span><span>Team</span><span>Rating</span><span></span></div>
+      <div id="rankingRows"><div class="message">Loading rankings...</div></div>
+    </div>
+  </section>
+
+  <section id="teamPage" class="hidden">
+    <div class="detail-top">
+      <button class="secondary" id="backButton">← All rankings</button>
+      <div><h2 id="teamTitle">Team</h2><div id="teamSubtitle" class="subtle"></div></div>
+    </div>
+    <div class="detail-stats">
+      <div class="pill" id="rankPill">Rank —</div>
+      <div class="pill" id="ratingPill">Rating —</div>
+      <div class="pill" id="recordPill">Record —</div>
+    </div>
+    <h3>2026 Schedule</h3>
+    <div class="subtle" style="margin:-8px 0 14px">Rating impact shows how many points each game added to or subtracted from the team's rating.</div>
+    <div id="scheduleRows" class="schedule"><div class="message">Loading schedule...</div></div>
+  </section>
+
+  <footer>Rankings are calculated by the Java backend using the project's schedule data and rating rules.</footer>
+</main>
+
+<script>
+  let rankings = [];
+
+  const rankingsPage = document.getElementById('rankingsPage');
+  const teamPage = document.getElementById('teamPage');
+
+  function escapeHtml(value) {
+    return String(value).replace(/[&<>"']/g, ch => ({
+      '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'
+    })[ch]);
+  }
+
+  async function loadSettings() {
+    try {
+      const response = await fetch('/api/settings');
+      if (!response.ok) throw new Error(await response.text());
+
+      const settings = await response.json();
+
+      document.getElementById('iterationsInput').value = settings.iterations;
+      document.getElementById('locationFactorInput').value = settings.locationFactor;
+      document.getElementById('marginFactorInput').value = settings.marginFactor;
+      document.getElementById('recencyFactorInput').value = settings.recencyFactor;
+      document.getElementById('iterations').textContent = settings.iterations;
+    } catch (error) {
+      console.error('Could not load ranking settings:', error);
+    }
+  }
+
+  async function loadRankings() {
+    const rows = document.getElementById('rankingRows');
+    rows.innerHTML = '<div class="message">Loading rankings...</div>';
+
+    try {
+      const response = await fetch('/api/rankings');
+      if (!response.ok) throw new Error(await response.text());
+
+      rankings = await response.json();
+      updateRankingDisplay();
+    } catch (error) {
+      rows.innerHTML = `<div class="message">Could not load rankings. ${escapeHtml(error.message)}<br>Make sure the Java server is running.</div>`;
+    }
+  }
+
+  function updateRankingDisplay() {
+    document.getElementById('teamCount').textContent = rankings.length;
+    document.getElementById('leader').textContent =
+      rankings.length ? rankings[0].team : '—';
+    renderRankings();
+  }
+
+  async function recalculateRankings() {
+    const button = document.getElementById('recalculate');
+
+    const iterations = Number(document.getElementById('iterationsInput').value);
+    const locationFactor = Number(document.getElementById('locationFactorInput').value);
+    const marginFactor = Number(document.getElementById('marginFactorInput').value);
+    const recencyFactor = Number(document.getElementById('recencyFactorInput').value);
+
+    if (!Number.isInteger(iterations) || iterations < 1
+        || !Number.isFinite(locationFactor) || locationFactor < 0
+        || locationFactor > 1
+        || !Number.isFinite(marginFactor) || marginFactor < 0
+        || !Number.isFinite(recencyFactor) || recencyFactor < 0) {
+      alert('Enter a positive whole number of iterations, a location factor from 0 to 1, and nonnegative margin and recency factors.');
+      return;
+    }
+
+    button.disabled = true;
+    button.textContent = 'Recalculating...';
+
+    try {
+      const parameters = new URLSearchParams({
+        iterations: iterations,
+        locationFactor: locationFactor,
+        marginFactor: marginFactor,
+        recencyFactor: recencyFactor
+      });
+
+      const response = await fetch('/api/recalculate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: parameters.toString()
+      });
+
+      if (!response.ok) throw new Error(await response.text());
+
+      rankings = await response.json();
+      document.getElementById('iterations').textContent = iterations;
+      updateRankingDisplay();
+
+    } catch (error) {
+      alert('Could not recalculate rankings: ' + error.message);
+    } finally {
+      button.disabled = false;
+      button.textContent = 'Recalculate Rankings';
+    }
+  }
+
+  function renderRankings() {
+    const query = document.getElementById('search').value.trim().toLowerCase();
+    const filtered = rankings.filter(team => team.team.toLowerCase().includes(query));
+    const rows = document.getElementById('rankingRows');
+
+    if (!filtered.length) {
+      rows.innerHTML = '<div class="message">No teams match your search.</div>';
+      return;
+    }
+
+    rows.innerHTML = filtered.map(team => `
+      <button class="team-row" data-team="${team.index}">
+        <span class="rank">#${team.rank}</span>
+        <span class="team-name">${escapeHtml(team.team)}</span>
+        <span class="rating">${Number(team.rating).toLocaleString(undefined, {maximumFractionDigits: 2})}</span>
+        <span class="view">View schedule →</span>
+      </button>`).join('');
+
+    rows.querySelectorAll('.team-row').forEach(button => {
+      button.addEventListener('click', () => openTeam(Number(button.dataset.team)));
+    });
+  }
+
+  async function openTeam(index) {
+    rankingsPage.classList.add('hidden');
+    teamPage.classList.remove('hidden');
+
+    document.getElementById('teamTitle').textContent = 'Loading...';
+    document.getElementById('scheduleRows').innerHTML =
+      '<div class="message">Loading schedule...</div>';
+
+    try {
+      const response = await fetch(`/api/team?id=${encodeURIComponent(index)}`);
+      if (!response.ok) throw new Error(await response.text());
+
+      const data = await response.json();
+
+      document.getElementById('teamTitle').textContent = data.team;
+      document.getElementById('teamSubtitle').textContent = '2026 FBS season schedule';
+      document.getElementById('rankPill').textContent = `Rank #${data.rank}`;
+      document.getElementById('ratingPill').textContent =
+        `Rating ${Number(data.rating).toLocaleString(undefined, {maximumFractionDigits: 2})}`;
+      document.getElementById('recordPill').textContent =
+        `Record ${data.wins}-${data.losses}${data.ties ? '-' + data.ties : ''}`;
+
+      const schedule = document.getElementById('scheduleRows');
+
+      if (!data.games.length) {
+        schedule.innerHTML = '<div class="message">No schedule entries found.</div>';
+      } else {
+        schedule.innerHTML = data.games.map((game, i) => {
+          const resultClass = game.result === 1 ? 'win'
+            : game.result === -1 ? 'loss' : 'pending';
+
+          const resultText = game.result === 1 ? 'WIN'
+            : game.result === -1 ? 'LOSS' : 'NOT PLAYED';
+
+          const score = game.result === 0 ? '—'
+            : `${game.teamScore}–${game.opponentScore}`;
+
+          const impactClass = game.ratingImpact > 0 ? 'positive'
+            : game.ratingImpact < 0 ? 'negative' : 'zero';
+
+          const impactSign = game.ratingImpact > 0 ? '+' : '';
+          const impactText = Number(game.ratingImpact).toLocaleString(
+            undefined, {maximumFractionDigits: 2});
+
+          return `<article class="game">
+            <div class="week">Game ${i + 1}</div>
+            <div>
+              <div class="opponent">${escapeHtml(game.opponent)}</div>
+              <div class="location">${escapeHtml(game.location)}</div>
+            </div>
+            <div class="location">${escapeHtml(game.status)}</div>
+            <div class="result ${resultClass}">
+              ${resultText}<br>
+              <span style="font-size:12px;font-weight:600">${score}</span>
+              <div class="impact ${impactClass}">Impact: ${impactSign}${impactText} pts</div>
+            </div>
+          </article>`;
+        }).join('');
+      }
+
+      history.pushState({team:index}, '', `?team=${index}`);
+
+    } catch (error) {
+      document.getElementById('teamTitle').textContent = 'Unable to load team';
+      document.getElementById('scheduleRows').innerHTML =
+        `<div class="message">${escapeHtml(error.message)}</div>`;
+    }
+  }
+
+  function showRankings(updateHistory = true) {
+    teamPage.classList.add('hidden');
+    rankingsPage.classList.remove('hidden');
+
+    if (updateHistory) {
+      history.pushState({}, '', location.pathname);
+    }
+  }
+
+  document.getElementById('backButton').addEventListener('click',
+    () => showRankings());
+
+  document.getElementById('recalculate').addEventListener('click',
+    recalculateRankings);
+
+  document.getElementById('search').addEventListener('input',
+    renderRankings);
+
+  window.addEventListener('popstate', () => {
+    const id = new URLSearchParams(location.search).get('team');
+
+    if (id !== null) {
+      openTeam(Number(id));
+    } else {
+      showRankings(false);
+    }
+  });
+
+  async function initialize() {
+    await loadSettings();
+    await loadRankings();
+  }
+
+  initialize();
+</script>
+</body>
+</html>
