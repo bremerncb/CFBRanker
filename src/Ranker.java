@@ -9,7 +9,7 @@ import java.util.Arrays;
  */
 public final class Ranker {
 
-    public static final int DEFAULT_ITERATIONS = 15;
+    public static final int DEFAULT_ITERATIONS = 50;
 
     private Ranker() {
     }
